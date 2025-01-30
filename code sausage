@@ -1,0 +1,705 @@
+----------------------------------------------------------------------------Creare tabele--------------------------------------------------------------
+--1.  Departamente: –Creare tabel Departamente
+CREATE TABLE Departamente(
+    ID_Departament NUMBER PRIMARY KEY,
+    Nume_Departament VARCHAR2(50) NOT NULL);
+
+--2. Functii:  –Creare tabel Functii
+CREATE TABLE Functii(
+    ID_Functie NUMBER PRIMARY KEY,
+    Nume_Functie VARCHAR2(50) NOT NULL);
+
+--3. Angajati: –Creare tabel Angajati
+CREATE TABLE Angajati( 
+    ID_Angajat NUMBER PRIMARY KEY,
+    Nume VARCHAR2(50) NOT NULL,
+    Prenume VARCHAR2(50) NOT NULL, 
+    ID_Departament NUMBER,
+    ID_Functie NUMBER,
+    Salariu NUMBER CHECK (Salariu>0),
+    Data_Angajarii DATE,
+   FOREIGN KEY (ID_Departament) REFERENCES Departamente(ID_Departament),
+   FOREIGN KEY(ID_Functie) REFERENCES Functii(ID_Functie));
+ALTER TABLE Angajati ADD ID_User NUMBER;
+ALTER TABLE Angajati ADD CONSTRAINT FK_Angajati_User FOREIGN KEY (ID_User) REFERENCES Users(ID_User);
+
+--4. Proiecte: –Creare tabel Proiecte
+CREATE TABLE Proiecte(
+ID_Proiect NUMBER PRIMARY KEY,
+Nume_Proiect VARCHAR2(100) NOT NULL,
+Buget NUMBER CHECK(Buget>0),
+Data_Inceput DATE,
+Data_Sfarsit DATE);
+ALTER TABLE Proiecte ADD Status_Proiect VARCHAR2(50);
+
+--5. Lansari: –Creare tabel Lansari
+CREATE TABLE Lansari(
+    ID_Lansare NUMBER PRIMARY KEY,
+    ID_Proiect NUMBER REFERENCES Proiecte(ID_Proiect),
+    Data_Lansare DATE,
+    Cost NUMBER CHECK (Cost>0));
+
+--6. Vehicule Spatiale: –Creare tabel Vehicule Spatiale
+CREATE TABLE Vehicule_Spatiale(
+    ID_Vehicul NUMBER PRIMARY KEY,
+    Nume_Vehicul VARCHAR2(50) NOT NULL,
+    Tip_Vehicul VARCHAR2(50),
+    Data_Construirii DATE,
+    ID_Lansare NUMBER REFERENCES Lansari(ID_Lansare));
+
+--7. Clienti: –Creare tabel Clienti
+CREATE TABLE Clienti(
+    ID_Client NUMBER PRIMARY KEY,
+    Nume_Client VARCHAR2(100) NOT NULL,
+    Tara VARCHAR2(50),
+    Email VARCHAR(100));
+
+--8. Contracte: –Creare tabel Contracte
+CREATE TABLE Contracte(
+    ID_Contract NUMBER PRIMARY KEY,
+    ID_Client NUMBER REFERENCES Clienti(ID_Client),
+    ID_Proiect NUMBER REFERENCES Proiecte(ID_Proiect),
+    Suma NUMBER CHECK(Suma>0),
+    Data_Semnarii DATE);
+
+
+--9. Componente:  –Creare tabel Componente
+CREATE TABLE Componente(
+    ID_Componenta NUMBER PRIMARY KEY,
+    Nume_Componenta VARCHAR2(50) NOT NULL,
+    ID_Vehicul NUMBER REFERENCES Vehicule_Spatiale(ID_Vehicul),
+    Cost NUMBER CHECK(Cost>0));
+
+--10. Stocuri: –Creare tabel Stocuri
+CREATE TABLE Stocuri(
+    ID_Stoc NUMBER PRIMARY KEY,
+    ID_Componenta NUMBER REFERENCES Componente(ID_Componenta),
+    Cantitate NUMBER CHECK (Cantitate>=0),
+    Locatie VARCHAR2(50));
+
+--11.Angajati Proiecte:  –Creare tabel Proiecte
+CREATE TABLE Angajati_Proiecte (
+    ID_Angajat NUMBER NOT NULL REFERENCES Angajati(ID_Angajat),
+    ID_Proiect NUMBER NOT NULL REFERENCES Proiecte(ID_Proiect),
+    Rol VARCHAR2(50),
+    Ore_Lucrate NUMBER,
+    PRIMARY KEY (ID_Angajat, ID_Proiect));
+
+--12. Users: –Creare tabel Users
+CREATE TABLE Users (
+    ID_User NUMBER PRIMARY KEY,
+    Nume_Utilizator VARCHAR2(50) NOT NULL,
+    Parola VARCHAR2(255) NOT NULL,
+    Rol VARCHAR2(50) CHECK (Rol IN ('Manager', 'Angajat', 'Administrator')) NOT NULL,
+    Email VARCHAR2(100),
+    Data_Inregistrare DATE DEFAULT SYSDATE);
+--modificare atribut email ->adaug restricie de unicitate pentru email
+ALTER TABLE Users ADD CONSTRAINT UC_Email UNIQUE (Email);-
+
+--------------------------------------------------------------------------Actualizarea structurii tabelelor si modificarea restrictiilor de integritate -----------------------------------------------
+--modificare atribut email ->adaug restricie de unicitate pentru email
+ALTER TABLE Users ADD CONSTRAINT UC_Email UNIQUE (Email);
+--ADAUGA RELATIE INTRE ANGAJATI SI USERS PENTRU CONTURI UTLILIZATOR
+   ALTER TABLE Angajati ADD ID_User NUMBER;
+ALTER TABLE Angajati ADD CONSTRAINT FK_Angajati_User FOREIGN KEY (ID_User) REFERENCES Users(ID_User);
+-- modificare tabel angajati -> adauga coloana noua pentru numarul de telefon al angajatilor
+ALTER TABLE Angajati 
+ADD Telefon VARCHAR2(10);
+
+--MODIFICA/EXTINDE DIMENSIUNEA DENUMIRII VEHICULULUI SPATIAL
+ALTER TABLE Vehicule_Spatiale
+MODIFY Nume_Vehicul VARCHAR2(75);
+--ADAUGA COLOANA NOUA PENTRU FEEDBACK CLIENTI
+ALTER TABLE Clienti 
+ADD FEEDBACK VARCHAR(25);
+
+--STERGERE COLOANA FEEDBACK CLIENTI
+ALTER TABLE Clienti
+DROP COLUMN FEEDBACK;
+
+--CONSTRANGERE PENTRU CA SALARIUL ANGAJATILOR SA FIE MAI MARE DE 2500
+ALTER TABLE Angajati
+ADD CONSTRAINT CK_Salariu CHECK (Salariu>2500);
+--constrangere pentru vehicule incat sa nu se repete
+ALTER TABLE Vehicule_Spatiale
+ADD CONSTRAINT UQ_TipVehicul UNIQUE (Tip_Vehicul);
+--adauga un vehicul spatial ce are id-ul egal cu 301
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare)
+Values(301, 'Apollo 11', 'Racheta', TO_DATE('2023-11-11', 'YYYY-MM-DD'),NULL);
+--adauga o componenta pentru un vehicul spatial
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost)
+Values (501, 'Panou Solar', 301, 100000);
+select from Componente;
+--adauga in stocul cu id-ul 601, 25 de bucati din componenta cu id-ul 501, aflandu-se in depozitul central
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie)
+VALUES (601, 501, 25, 'Depozit Central');
+
+--------------------------------------------------------------------Adăugarea de înregistrări în fiecare tabelă---------------------------------------------------------------------------------------
+--INREGISTRARI TABELA DEPARTAMENTE
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (1, 'IT');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (2, 'MARKETING');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (3, 'CERCETARE');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (4, 'TRAINING ASTRONAUTI');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (5, 'HR');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (6, 'VANZARI');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (7, 'PROIECTARE');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (8, 'TESTARE');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (9, 'INGINERIE');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (10, 'PRODUCTIE');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (11, 'DEZVOLTARE');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (12, 'FINANCIAR');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (13, 'OBSERVATOR');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (14, 'SUPORT');
+INSERT INTO Departamente (ID_Departament, Nume_Departament) VALUES (15, 'ECHIPAJ');
+--INREGISTRARI TABELA FUNCTII
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (1, 'ASTRONAUT');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (2, 'INGINER AEROSPAŢIAL');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (3, 'SPECIALIST IN TELECOMUNICATII SPATIALE');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (4, 'INGINER IN SISTEME DE PROPULSIE SPATIALA');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (5, 'COORDONATOR MISIUNE SPATIALA');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (6, 'ANALIST DE DATE SPATIALE');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (7, 'PROIECTANT DE VEHICULE SPATIALE');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (8, 'INGINER DE VANZARI SPATIALE');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (9, 'SPECIALIST IN TEHNOLOGII SATELIT');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (10, 'MANAGER DE PROIECT SPATIAL');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (11, 'CONSULTANT IN EXPLORARE SPAŢIALA');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (12, 'OPERATOR DE SATELIT');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (13, 'TEHNICIAN DE ASAMBLARE VEHICULE SPATIALE');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (14, 'INGINER DE SISTEME DE NAVIGATIE SPATIALA');
+INSERT INTO Functii (ID_Functie, Nume_Functie) VALUES (15, 'DIRECTOR DE PROGRAM SPATIAL');
+--INREGISTRARI USERS
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (1, 'astro_admin', 'spaceX123', 'Administrator', 'astro_admin@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (2, 'mission_control', 'orbitSecure456', 'Manager', 'mission_control@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (3, 'comet_explorer', 'deepSpace789', 'Angajat', 'comet_explorer@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (4, 'galaxy_guide', 'nebulaPass123', 'Administrator', 'galaxy_guide@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (5, 'satellite_master', 'starlight432', 'Manager', 'satellite_master@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (6, 'star_mapper', 'starfield890', 'Angajat', 'star_mapper@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (7, 'rocket_chef', 'fuelTime321', 'Administrator', 'rocket_chef@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (8, 'orbital_eng', 'astroBuild567', 'Manager', 'orbital_eng@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (9, 'lunar_research', 'moonLab987', 'Angajat', 'lunar_research@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (10, 'cosmic_pioneer', 'supernova654', 'Administrator', 'cosmic_pioneer@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (11, 'planet_protector', 'spaceShield321', 'Manager', 'planet_protector@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (12, 'alien_communicator', 'extraterrestrial123', 'Angajat', 'alien_communicator@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (13, 'astro_navigator', 'orbitMap456', 'Administrator', 'astro_navigator@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (14, 'mars_visionary', 'redPlanet789', 'Manager', 'mars_visionary@spatiu.ro', SYSDATE);
+INSERT INTO Users (ID_User, Nume_Utilizator, Parola, Rol, Email, Data_Inregistrare) 
+VALUES (15, 'nebula_watcher', 'stellarView012', 'Angajat', 'nebula_watcher@spatiu.ro', SYSDATE);
+--INREGISTRARI ANGAJATI
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (1, 'Popescu', 'Ion', 1, 1, 7000, TO_DATE('2020-01-10', 'YYYY-MM-DD'), 1, '0743123456');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (2, 'Ionescu', 'Maria', 2, 5, 6500, TO_DATE('2021-02-15', 'YYYY-MM-DD'), 2, '0743123457');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (3, 'Vasilescu', 'Dan', 3, 6, 5000, TO_DATE('2022-03-20', 'YYYY-MM-DD'), 3, '0743123458');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (4, 'Stan', 'Elena', 4, 11, 7500, TO_DATE('2019-04-25', 'YYYY-MM-DD'), 4, '0743123459');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (5, 'Tudor', 'Alexandru', 5, 4, 6000, TO_DATE('2018-05-30', 'YYYY-MM-DD'), 5, '0743123460');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (6, 'Mihaila', 'Cristina', 6, 10, 8500, TO_DATE('2020-07-05', 'YYYY-MM-DD'), 6, '0743123461');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (7, 'Dumitrescu', 'Florin', 7, 2, 9000, TO_DATE('2019-06-15', 'YYYY-MM-DD'), 7, '0743123462');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (8, 'Georgescu', 'Andreea', 8, 9, 5500, TO_DATE('2021-11-22', 'YYYY-MM-DD'), 8, '0743123463');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (9, 'Pascu', 'Lucian', 9, 3, 7200, TO_DATE('2020-10-13', 'YYYY-MM-DD'), 9, '0743123464');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (10, 'Munteanu', 'Ioana', 10, 12, 6800, TO_DATE('2018-09-10', 'YYYY-MM-DD'), 10, '0743123465');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (11, 'Ciobanu', 'Radu', 11, 13, 8000, TO_DATE('2017-05-23', 'YYYY-MM-DD'), 11, '0743123466');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (12, 'Iordache', 'Vasile', 12, 8, 5300, TO_DATE('2021-02-28', 'YYYY-MM-DD'), 12, '0743123467');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (13, 'Ilie', 'Gabriela', 13, 7, 6000, TO_DATE('2020-08-12', 'YYYY-MM-DD'), 13, '0743123468');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (14, 'Neagu', 'Alexandra', 14, 4, 7000, TO_DATE('2019-03-10', 'YYYY-MM-DD'), 14, '0743123469');
+INSERT INTO Angajati (ID_Angajat, Nume, Prenume, ID_Departament, ID_Functie, Salariu, Data_Angajarii, ID_User, Telefon)
+VALUES (15, 'Popa', 'Florentina', 15, 6, 5600, TO_DATE('2021-07-14', 'YYYY-MM-DD'), 15, '0743123470');
+--INREGISTRARI PROIECTE
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (1, 'Misiune Marțiană', 5000000, TO_DATE('2024-01-01', 'YYYY-MM-DD'), TO_DATE('2024-12-31', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (2, 'Explorare Titan', 3500000, TO_DATE('2024-03-01', 'YYYY-MM-DD'), TO_DATE('2025-06-30', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (3, 'Lansare Satelit Global', 1000000, TO_DATE('2024-06-01', 'YYYY-MM-DD'), TO_DATE('2024-12-01', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (4, 'Colonie pe Luna', 20000000, TO_DATE('2025-01-01', 'YYYY-MM-DD'), TO_DATE('2028-01-01', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (5, 'Racheta Interstelară', 12000000, TO_DATE('2024-09-01', 'YYYY-MM-DD'), TO_DATE('2026-03-15', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (6, 'Stație Spațială Internațională 2', 15000000, TO_DATE('2024-05-01', 'YYYY-MM-DD'), TO_DATE('2027-12-01', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (7, 'Călătorie în Nebuloasă', 8000000, TO_DATE('2024-11-01', 'YYYY-MM-DD'), TO_DATE('2026-05-01', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (8, 'Satelit de Observație Cosmică', 4500000, TO_DATE('2024-07-01', 'YYYY-MM-DD'), TO_DATE('2025-12-31', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (9, 'Explorare Exoplanete', 10000000, TO_DATE('2025-04-01', 'YYYY-MM-DD'), TO_DATE('2027-06-30', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (10, 'Sistem de Propulsie Avansat', 6000000, TO_DATE('2024-08-01', 'YYYY-MM-DD'), TO_DATE('2025-11-30', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (11, 'Fabricație Vehicule Lunare', 11000000, TO_DATE('2024-12-01', 'YYYY-MM-DD'), TO_DATE('2027-08-01', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (12, 'Explorare Sistemul Solar Îndepărtat', 9000000, TO_DATE('2025-03-01', 'YYYY-MM-DD'), TO_DATE('2027-12-01', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (13, 'Crearea Coloniilor în Spațiu', 25000000, TO_DATE('2025-06-01', 'YYYY-MM-DD'), TO_DATE('2030-06-01', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (14, 'Explorare Adâncimile Universului', 14000000, TO_DATE('2024-10-01', 'YYYY-MM-DD'), TO_DATE('2026-07-01', 'YYYY-MM-DD'));
+INSERT INTO Proiecte (ID_Proiect, Nume_Proiect, Buget, Data_Inceput, Data_Sfarsit) 
+VALUES (15, 'Zbor la marginea Universului', 16000000, TO_DATE('2025-07-01', 'YYYY-MM-DD'), TO_DATE('2028-05-01', 'YYYY-MM-DD'));
+--INREGISTRARI LANSARI
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (1, 1, TO_DATE('2024-03-15', 'YYYY-MM-DD'), 500000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (2, 2, TO_DATE('2024-04-20', 'YYYY-MM-DD'), 750000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (3, 3, TO_DATE('2024-05-25', 'YYYY-MM-DD'), 300000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (4, 4, TO_DATE('2024-06-10', 'YYYY-MM-DD'), 1000000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (5, 5, TO_DATE('2024-07-18', 'YYYY-MM-DD'), 450000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (6, 6, TO_DATE('2024-08-22', 'YYYY-MM-DD'), 600000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (7, 7, TO_DATE('2024-09-15', 'YYYY-MM-DD'), 250000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (8, 8, TO_DATE('2024-10-12', 'YYYY-MM-DD'), 1200000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (9, 9, TO_DATE('2024-11-05', 'YYYY-MM-DD'), 850000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (10, 10, TO_DATE('2024-12-01', 'YYYY-MM-DD'), 700000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (11, 11, TO_DATE('2024-03-01', 'YYYY-MM-DD'), 950000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (12, 12, TO_DATE('2024-04-10', 'YYYY-MM-DD'), 500000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (13, 13, TO_DATE('2024-06-25', 'YYYY-MM-DD'), 600000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (14, 14, TO_DATE('2024-08-05', 'YYYY-MM-DD'), 700000);
+INSERT INTO Lansari (ID_Lansare, ID_Proiect, Data_Lansare, Cost) VALUES (15, 15, TO_DATE('2024-09-30', 'YYYY-MM-DD'), 1100000);
+--INREGISTRARI VEHICULE SPATIALE
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare)
+ VALUES (1, 'Space Shuttle Atlantis', 'Naveta Spatiala', TO_DATE('2023-01-01', 'YYYY-MM-DD'), 1);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (2, 'Falcon 9', 'Racheta Orizontala', TO_DATE('2023-02-20', 'YYYY-MM-DD'), 2);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare)
+ VALUES (3, 'Soyuz 2.1b', 'Racheta Verticala', TO_DATE('2023-03-15', 'YYYY-MM-DD'), 3);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (4, 'Atlas V', 'Racheta UCB', TO_DATE('2023-04-10', 'YYYY-MM-DD'), 4);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (5, 'H-IIA', 'Racheta Japoneza', TO_DATE('2023-05-05', 'YYYY-MM-DD'), 5);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (6, 'Space Shuttle Endeavour', 'Naveta Spatiala', TO_DATE('2023-06-01', 'YYYY-MM-DD'), 6);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (7, 'Long March 5B', 'Racheta China', TO_DATE('2023-07-01', 'YYYY-MM-DD'), 7);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (8, 'Shenzhou 12', 'Naveta Spatiala', TO_DATE('2023-08-15', 'YYYY-MM-DD'), 8);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (9, 'Falcon Heavy', 'Racheta Multi-Stage', TO_DATE('2023-09-20', 'YYYY-MM-DD'), 9);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (10, 'Vega C', 'Racheta Europeana', TO_DATE('2023-10-25', 'YYYY-MM-DD'), 10);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (11, 'Zuma', 'Satelit Comunicatii', TO_DATE('2023-11-01', 'YYYY-MM-DD'), 11);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (12, 'Terran 1', 'Racheta Lansa', TO_DATE('2023-12-10', 'YYYY-MM-DD'), 12);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (13, 'Discovery', 'Naveta Shuttle', TO_DATE('2023-01-30', 'YYYY-MM-DD'), 13);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (14, 'Orion', 'Naveta Sonda', TO_DATE('2023-02-25', 'YYYY-MM-DD'), 14);
+INSERT INTO Vehicule_Spatiale (ID_Vehicul, Nume_Vehicul, Tip_Vehicul, Data_Construirii, ID_Lansare) 
+VALUES (15, 'Tianwen 1', 'Satelit Mars', TO_DATE('2023-03-30', 'YYYY-MM-DD'), 15);
+--INREGISTRARI CLIENTI
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (1, 'SpaceX Exploration', 'SUA', 'contact@spacex.com');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (2, 'Blue Origin Aerospace', 'SUA', 'info@blueorigin.com');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (3, 'European Space Agency', 'Europa', 'support@esa.int');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (4, 'Roscosmos', 'Rusia', 'roscosmos@ros.ru');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (5, 'NASA', 'SUA', 'nasa@nasa.gov');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (6, 'ISRO', 'India', 'info@isro.in');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (7, 'CNSA', 'China', 'contact@cnsa.cn');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (8, 'Virgin Galactic', 'SUA', 'support@virgingalactic.com');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (9, 'Rocket Lab', 'Noua Zeelanda', 'info@rocketlab.co.nz');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (10, 'OneWeb', 'Marea Britanie', 'contact@oneweb.net');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (11, 'Arianespace', 'Franta', 'support@arianespace.com');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (12, 'Maxar Technologies', 'Canada', 'info@maxar.com');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (13, 'Space Adventures', 'SUA', 'adventures@spaceadventures.com');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (14, 'Astroscale', 'Japonia', 'info@astroscale.com');
+INSERT INTO Clienti (ID_Client, Nume_Client, Tara, Email) 
+VALUES (15, 'Sierra Space', 'SUA', 'contact@sierra.space');
+-- INREGISTRARI CONTRACTE
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (1, 1, 1, 1000000, TO_DATE('2024-03-01', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (2, 2, 1, 1200000, TO_DATE('2024-04-01', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (3, 5, 1, 1500000, TO_DATE('2024-05-01', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (4, 6, 1, 2000000, TO_DATE('2024-06-01', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (5, 1, 3, 500000, TO_DATE('2024-07-01', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (6, 1, 6, 800000, TO_DATE('2024-08-15', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (7, 1, 7, 1200000, TO_DATE('2024-09-10', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (8, 2, 4, 1000000, TO_DATE('2024-05-15', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (9, 3, 5, 850000, TO_DATE('2024-06-20', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (10, 4, 6, 950000, TO_DATE('2024-07-15', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (11, 5, 8, 1100000, TO_DATE('2024-08-01', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (12, 6, 9, 1300000, TO_DATE('2024-09-01', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (13, 7, 10, 1500000, TO_DATE('2024-10-01', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (14, 8, 11, 900000, TO_DATE('2024-11-01', 'YYYY-MM-DD'));
+INSERT INTO Contracte (ID_Contract, ID_Client, ID_Proiect, Suma, Data_Semnarii) 
+VALUES (15, 9, 12, 2000000, TO_DATE('2024-12-01', 'YYYY-MM-DD'));
+--INREGISTRARI COMPONENTE
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (1, 'Motor Principal', 1, 500000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (2, 'Sistem de Control', 1, 300000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (3, 'Panou Solar', 1, 200000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (4, 'Motor Merlin', 2, 700000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (5, 'Sistem de Navigatie', 2, 250000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (6, 'Stabilizator Faza', 2, 150000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (7, 'Motor RD-107A', 3, 800000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (8, 'Faza Superioara', 3, 400000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (9, 'Motor RD-180', 4, 900000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (10, 'Stabilizator al Traiectoriei', 4, 350000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (11, 'Motor LE-7A', 5, 600000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (12, 'Sistem de Comanda', 5, 275000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (13, 'Motor RS-25', 6, 750000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (14, 'Sistem de Asistenta la Lansare', 6, 320000);
+INSERT INTO Componente (ID_Componenta, Nume_Componenta, ID_Vehicul, Cost) 
+VALUES (15, 'Motor YF-77', 7, 850000);
+--INREGISTRARI STOCURI
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (1, 1, 10, 'Depozit 1');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (2, 2, 5, 'Depozit 2');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (3, 3, 8, 'Depozit 3');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (4, 4, 12, 'Depozit 1');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (5, 5, 7, 'Depozit 2');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (6, 6, 6, 'Depozit 4');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (7, 7, 9, 'Depozit 3');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (8, 8, 4, 'Depozit 2');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (9, 9, 15, 'Depozit 5');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (10, 10, 6, 'Depozit 1');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (11, 11, 10, 'Depozit 6');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (12, 12, 5, 'Depozit 2');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (13, 13, 8, 'Depozit 3');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (14, 14, 4, 'Depozit 5');
+INSERT INTO Stocuri (ID_Stoc, ID_Componenta, Cantitate, Locatie) 
+VALUES (15, 15, 11, 'Depozit 4');
+--INREGISTRARI ANGAJATI PROIECTE
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (1, 1, 'Coordonator', 1200);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (1, 5, 'Manager Proiect', 900);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (2, 2, 'Specialist', 1100);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (2, 6, 'Analist', 850);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (3, 4, 'Inginer', 1000);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (3, 8, 'Programator', 950);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (4, 7, 'Cercetator', 1050);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (4, 10, 'Inginer Senior', 800);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (5, 3, 'Coordonator Tehnic', 1200);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (5, 12, 'Consultant', 950);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (6, 9, 'Specialist IT', 1050);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (6, 14, 'Manager R&D', 1100);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (7, 11, 'Lider Echipa', 1300);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (7, 13, 'Coordonator Tehnic', 950);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (8, 15, 'Analist', 1000);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (9, 13, 'Inginer', 1200);
+INSERT INTO Angajati_Proiecte (ID_Angajat, ID_Proiect, Rol, Ore_Lucrate)
+VALUES (10, 8, 'Programator', 1100);
+------------------------------------------------------------------------------------Actualizarea înregistrărilor------------------------------------------------------------------------------------
+--1.actualizeaza numarul de ore lucrate pentru angajatul cu ID-ul 4 in proiectul cu ID-ul 7 la 1200
+UPDATE Angajati_Proiecte
+SET Ore_Lucrate=1200
+WHERE ID_Angajat=4 AND ID_Proiect=7;
+--2.modifica statusul proiectelor incepute in 2024 cu 'in progres'
+UPDATE Proiecte
+SET Status_Proiect = 'In progres'
+WHERE Data_Inceput >= TO_DATE('2024-01-01', 'YYYY-MM-DD') 
+  AND Data_Inceput < TO_DATE('2025-01-01', 'YYYY-MM-DD');
+--3.modifica rolul angajatului cu ID-ul 2 in proiectul cu ID-ul 2 in "Coordonator"
+UPDATE Angajati_Proiecte
+SET Rol='Coordonator'
+WHERE ID_Angajat=2 and ID_Proiect=2;
+--4. adauga 100 de ore lucrate pentru angajatii care au lucrat mai mult de 1000 de ore in orice proiect
+UPDATE Angajati_Proiecte
+SET Ore_Lucrate=Ore_Lucrate+100
+WHERE Ore_Lucrate>1000;
+
+--5.modifica rolul angajatului cu id-ul 3 la 'Consultant' in proiectul cu id-ul 8, pentru proiectele care sunt in progres
+UPDATE Angajati_Proiecte
+SET Rol='Consultant'
+WHERE ID_Angajat=3 AND ID_Proiect=8
+AND ID_Proiect IN(SELECT ID_Proiect FROM Proiecte WHERE Status_Proiect='In progres');
+Ștergerea și recuperarea unei tabele 
+-----------------------------------------------------------------------Creare sau alegere tabelă ce urmează a fi ștearsă----------------------------------------------
+CREATE TABLE Satelit(
+    ID_Satelit NUMBER PRIMARY KEY,
+    Nume_Satelit VARCHAR2(100) NOT NULL,
+    Locatie_Lansare VARCHAR2(50),
+    Stare_Actuala VARCHAR(100)
+--Ștergere tabelă
+DROP TABLE Satelit;
+--Recuperare tabelă
+FLASHBACK TABLE Satelit TO BEFORE DROP;
+--------------------------------------------------------------------------------------Exemple de interogări variate (SELECT)-------------------------------------------------
+-- Operatori de comparatie
+--1. AFISEAZA ANGAJATII CARE AU SALARIUL MAIMARE DE 5000 SI S-AU ANGAJAT DUPA 2021
+SELECT Nume, Prenume, Salariu, Data_Angajarii
+FROM Angajati
+WHERE Salariu>5000 AND Data_Angajarii>TO_DATE('2021-01-01', 'YYYY-MM-DD');
+--2. AFISEAZA PROIECTELE CU BUGETUL PESTE 10 MILIOANE U.M.
+SELECT Nume_Proiect, Buget 
+FROM Proiecte 
+WHERE Buget > 10000000;
+--3.AFISEAZA LANSARILE CE AU AVUT LOC INTRE 1 MARTIE 2024 SI 30 IUNIE 2024
+SELECT ID_Lansare, Data_Lansare
+FROM Lansari
+WHERE Data_Lansare BETWEEN TO_DATE('2024-03-01','YYYY-MM-DD') AND TO_DATE('2024-06-30','YYYY-MM-DD');
+-- 4. AFISEAZA ANGAJATII SI DEPARTAMENTELE IN CARE LUCREAZA
+SELECT a.Nume, a.Prenume, d.Nume_Departament 
+FROM Angajati a
+JOIN Departamente d ON a.ID_Departament = d.ID_Departament;
+-- 5. AFISEAZA VEHICULELE SPATIALE SI PROIECTELE ASOCIATE
+SELECT v.Nume_Vehicul, p.Nume_Proiect
+FROM Vehicule_Spatiale v
+JOIN Lansari l ON v.ID_Lansare = l.ID_Lansare
+JOIN Proiecte p ON l.ID_Lansare = p.ID_Proiect;
+-- 6. AFISEAZA CLIENTII SI PROIECTELE PENTRU CARE AU SEMNAT CONTRACTE, CAT SI VALOAREA PROIECTULUI RESPECTIV
+SELECT c.Nume_Client, p.Nume_proiect, co.Suma
+FROM Clienti c
+JOIN Contracte co ON c.ID_Client = co.ID_Client
+JOIN Proiecte p ON co.ID_Proiect = p.ID_Proiect;
+-- 7. SUMA TOTALA A SALARIILOR IN FIECARE DEPARTAMENT
+SELECT d.Nume_Departament, SUM(a.Salariu) AS Total_Salariu
+FROM Angajati a
+JOIN Departamente d ON a.ID_Departament = d.ID_Departament
+GROUP BY d.Nume_Departament;
+-- 8. MEDIA BUGETULUI PROIECTELOR
+SELECT AVG(Buget) AS Media_Buget
+FROM Proiecte;
+-- 9. NUMARUL DE COMPONENTE IN FIECARE VEHICUL
+SELECT v.Nume_Vehicul, COUNT(c.ID_Componenta) AS Numar_Componente
+FROM Vehicule_Spatiale v
+JOIN Componente c ON v.ID_Vehicul = c.ID_Vehicul
+GROUP BY v.Nume_Vehicul;
+-- 10. CALCUL VECHIME ANGAJATI
+SELECT Nume, Prenume, ROUND(MONTHS_BETWEEN(SYSDATE, Data_Angajarii) / 12, 1) AS Ani_Experienta
+FROM Angajati;
+-- 11. AFISEAZA NUMELE PROIECTELOR IN ALL CAPS
+SELECT UPPER(Nume_Proiect) AS Nume_Proiect_Upper
+FROM Proiecte;
+-- 12. AFISEAZA ZIUA SAPTAMANII PENTRU FIECARE LANSARE
+SELECT ID_Lansare, TO_CHAR(Data_Lansare, 'Day') AS Ziua_Saptamanii
+FROM Lansari;
+-- 13. CLASIFICA SALARIILE ANGAJATILOR BY MEDIU, MIC, RIDICAT
+SELECT Nume, Prenume, Salariu,
+       CASE 
+         WHEN Salariu > 8000 THEN 'Ridicat'
+         WHEN Salariu BETWEEN 5000 AND 8000 THEN 'Mediu'
+         ELSE 'Mic'
+       END AS Clasa_Salariu
+FROM Angajati;
+-- 14. CLASIFICARE STARE PROIECTE IN FUNCTIE DE BUGET: IN PROGRES, IN DERULARE, FINALIZAT, COMPLET, NECUNOSCUT
+SELECT Nume_Proiect, 
+       DECODE(Status_Proiect, 
+              'In progres', 'Proiect în derulare', 
+              'Finalizat', 'Proiect complet',
+              'Necunoscut') AS Status
+FROM Proiecte;
+-- 15. AFISEAZA PROIECTELE CARE NU AU LANSARI ASOCIATE
+SELECT Nume_Proiect 
+FROM Proiecte
+MINUS
+SELECT DISTINCT p.Nume_Proiect
+FROM Proiecte p
+JOIN Lansari l ON p.ID_Proiect = l.ID_Proiect;
+SELECT Nume_Proiect AS PROIECTE
+FROM Proiecte
+WHERE Buget > 10000000
+UNION
+SELECT Nume_Proiect 
+FROM Proiecte
+WHERE Status_Proiect = 'In progres';
+-- 17. AFISARE ANGAJATI CARE LUCREAZA LA CEL PUTIN DOUA PROIECTE DIFERITE
+SELECT ID_Angajat 
+FROM Angajati_Proiecte
+GROUP BY ID_Angajat
+HAVING COUNT(DISTINCT ID_Proiect) > 1
+INTERSECT
+SELECT ID_Angajat
+FROM Angajati;
+-- 18. AFISARE ANGAJATI CARE LUCREAZA IN PROIECTE CU BUGET PESTE 10 MILIOANE
+SELECT Nume, Prenume 
+FROM Angajati a
+WHERE ID_Angajat IN (
+    SELECT DISTINCT ID_Angajat
+    FROM Angajati_Proiecte ap
+    JOIN Proiecte p ON ap.ID_Proiect = p.ID_Proiect
+    WHERE p.Buget > 10000000);
+-- 19. AFISARE VEHICULE ASOCIATE CU CEL MAI SCUMP PROIECT
+SELECT Nume_Vehicul 
+FROM Vehicule_Spatiale v
+WHERE ID_Lansare IN (
+    SELECT ID_Lansare 
+    FROM Lansari
+    WHERE ID_Proiect = (
+        SELECT ID_Proiect 
+        FROM Proiecte 
+        WHERE Buget = (SELECT MAX(Buget) FROM Proiecte)
+    )
+);
+-- 20. CALCULATI MEDIA COSTULUI COMPONENTELOR DIN FIECARE VEHICUL
+SELECT ID_Vehicul, AVG(Cost) AS Media_Cost
+FROM Componente
+WHERE Cost > (SELECT AVG(Cost) FROM Componente)
+GROUP BY ID_Vehicul;
+-- 21. TRANSFORMA NUMELE VEHICULELOR IN LITERE MICI
+SELECT LOWER(Nume_Vehicul) AS Nume_Lit_Mici 
+FROM Vehicule_Spatiale;
+-- 22. EXTRAGE PRIMELE 3 CARACTERE DIN NUMELE CLIENTILOR
+SELECT SUBSTR(Nume_Client, 1, 3) AS Prefix_Client 
+FROM Clienti;
+-- 23. PRECIZATI POZITIA PRIMEI APARITII A LITEREI 'E' IN NUMELE PROIECTELOR
+SELECT INSTR(Nume_Proiect, 'e') AS Pozitie_Litera_E 
+FROM Proiecte;
+-- 24. ROTUNJITI COSTUL LANSARILOR
+SELECT ROUND(Cost, -3) AS Cost_Rotunjit 
+FROM Lansari;
+-- 25. CARE ESTE DATA URMATOAREI ZILE DE LUNI PENTRU FIECARE LANSARE?
+SELECT ID_Lansare, NEXT_DAY(Data_Lansare, 'MONDAY') AS Urmatoarea_Luni 
+FROM Lansari;
+-- 26. CARE ESTE DIFERENTA DINTRE DATA INCEPERII SI DATA SFARSITULUI PROIECTELOR?
+SELECT Nume_Proiect, MONTHS_BETWEEN(Data_Sfarsit, Data_Inceput) AS Diferenta_Luni 
+FROM Proiecte;
+-- 27. CARE ESTE ULTIMA ZI A LUNII PENTRU FIECARE LANSARE?
+SELECT ID_Lansare, LAST_DAY(Data_Lansare) AS Ultima_Zi_Luna 
+FROM Lansari;
+-- 28. CARE ESTE COSTUL TOTAL AL COMPONENTELOR PENTRU FIECARE VEHICUL?
+SELECT ID_Vehicul, SUM(Cost) AS Total_Cost 
+FROM Componente 
+GROUP BY ID_Vehicul;
+-- 29. CARE ESTE NUMARUL DE LANSARI PENTRU FIECARE PROIECT?
+SELECT ID_Proiect, COUNT(ID_Lansare) AS Nr_Lansari 
+FROM Lansari 
+GROUP BY ID_Proiect;
+-- 30. MEDIA SALARIILOR PENTRU FIECARE DEPARTAMENT CARE ESTE PESTE 6000 
+SELECT ID_Departament, AVG(Salariu) AS Media_Salariu 
+FROM Angajati 
+GROUP BY ID_Departament 
+HAVING AVG(Salariu) > 6000;
+-- 31. PROIECTELE IN CARE FIECARE SUB-PROIECT ESTE SUBORDONAT PROIECTULUI PRINCIPAL
+SELECT ID_Proiect, Nume_Proiect, LEVEL, CONNECT_BY_ISLEAF AS Este_Frunza 
+FROM Proiecte 
+CONNECT BY PRIOR ID_Proiect = ID_Proiect - 1 
+START WITH ID_Proiect = 1;
+-- 32. AFISARE PROIECTE CARE AU BUGETUL PESTE MEDIA TOTALA A BUGETELOR
+SELECT Nume_Proiect, Buget 
+FROM Proiecte 
+WHERE Buget > (SELECT AVG(Buget) FROM Proiecte);
+-- 33. CARE ESTE LUNGIMEA NUMELUI FIECARUI PROIECT?
+SELECT Nume_Proiect, LENGTH(Nume_Proiect) AS Lungime_Nume 
+FROM Proiecte;
+-- 34. CONCATENATI NUMELE CLIENTILOR CU NUMELE TARII DE ORIGINE
+SELECT CONCAT(Nume_Client, ', ' || Tara) AS Client_Tara 
+FROM Clienti;
+-- 35. EXTRAGETI ANUL LANSARII PENTRU FIECARE VEHICUL LANSAT
+SELECT ID_Lansare, EXTRACT(YEAR FROM Data_Lansare) AS Anul_Lansarii 
+FROM Lansari;
+
+---------------------------------------------------------------------------------Gestiunea altor obiecte ale bazei de date: vederi, indecsi, sinonime-----------------------------------------------------
+--VIEW PENTRU A URMARI MAI USOR ANGAJATII SI DEPARTAMENTELE IN CARE LUCREAZA
+CREATE VIEW Angajati_Departamente_View AS
+SELECT a.Nume, a.Prenume, d.Nume_Departament
+FROM Angajati a
+JOIN Departamente d ON a.ID_Departament = d.ID_Departament;
+SELECT * FROM Angajati_Departamente_View;
+--VIEW PENTRU A URMARI MAI USOR PROIECTELE SI COSTURILE LOR DE LANSARE
+CREATE VIEW Proiecte_Lansari_View AS
+SELECT p.Nume_Proiect, p.Buget, l.Data_Lansare, l.Cost
+FROM Proiecte p
+JOIN Lansari l ON p.ID_Proiect = l.ID_Proiect;
+SELECT * FROM Proiecte_Lansari_View;
+--INDEX PE COLOANA SALARIU DIN ANGAJATI PT A ACCELERA CAUTARILE
+CREATE INDEX idx_salariu_angajati ON Angajati (Salariu);
+--INDEX COMPUS DIN COLOANELE ID_DEPARTAMENT SI ID_DUNCTIE DIN ANGAJATI
+CREATE INDEX idx_departament_functie ON Angajati (ID_Departament, ID_Functie);
+
+SELECT * FROM USER_INDEXES;
+--STERGERE INDEX
+DROP INDEX idx_salariu_angajati;
+
+--SINONIM PENTRU TABELELE: ANGAJATI, PROIECTE_LANSARI_VIEW
+CREATE SYNONYM Angajati_Syn FOR Angajati;
+CREATE SYNONYM Proiecte_Lansari_View_Syn FOR Proiecte_Lansari_View;
+SELECT * FROM Angajati_Syn;
+SELECT * FROM Proiecte_Lansari_View_Syn;
+
+
+
+
+
+
+
+
+
+
